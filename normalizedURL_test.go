@@ -1,12 +1,24 @@
 package main
 
 import (
-	"errors"
+	"fmt"
+	"net/url"
+	"strings"
 	"testing"
 )
 
 func normalizedURL(inputURL string) (string, error) {
-	return "", errors.New("not yet implemented")
+	parsedURL, err := url.Parse(inputURL)
+	if err != nil {
+		return "", fmt.Errorf("inputURL: %s is not valid", inputURL)
+	}
+	fullPath := parsedURL.Host + parsedURL.Path
+
+	fullPath = strings.ToLower(fullPath)
+
+	fullPath = strings.TrimSuffix(fullPath, "/")
+
+	return fullPath, nil
 }
 
 func TestNormalizeURL(t *testing.T) {
@@ -45,7 +57,7 @@ func TestNormalizeURL(t *testing.T) {
 				return
 			}
 			if actual != tc.expected {
-				t.Errorf("Test %v - '%s' FAIL: expected error: %v", i, tc.name, err)
+				t.Errorf("Test %v - '%s' FAIL: expected URL: %v, actual: %v", i, tc.name, tc.expected, actual)
 			}
 		})
 	}

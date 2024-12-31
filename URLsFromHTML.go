@@ -1,47 +1,46 @@
 package main
 
 import (
+	"fmt"
 	"golang.org/x/net/html"
 	"net/url"
 	"strings"
 )
 
 func getURLsFromHTML(htmlBody, rawBaseURL string) ([]string, error) {
-	URLs := []string{}
-	normalizeURLs := []string{}
+	baseUrl, err := url.Parse(rawBaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse base URL: %v", err)
+	}
 
 	htmlReader := strings.NewReader(htmlBody)
-	node, err := html.Parse(htmlReader)
+	doc, err := html.Parse(htmlReader)
 	if err != nil {
-		return URLs, err
-	}
-	findLink(node, &URLs)
-	for _, rawURL := range URLs {
-		parsedURL, err := url.Parse(rawURL)
-		if err != nil {
-			return nil, err
-		}
-		absoleteURL := ""
-		if parsedURL.Host == "" {
-			absoleteURL = rawBaseURL + parsedURL.Path
-		} else {
-			absoleteURL = parsedURL.String()
-		}
-		normalizeURLs = append(normalizeURLs, absoleteURL)
+		return nil, fmt.Errorf("couldn't parse HTMLBody: %v", err)
 	}
 
-	return normalizeURLs, nil
-}
+	var urls []string
+	var traverseNode func(node *html.Node)
+	traverseNode = func(node *html.Node) {
+		if node.Type == html.ElementNode && node.Data == "a" {
+			for _, anchor := range node.Attr {
+				if anchor.Key == "href" {
+					href, err := url.Parse(anchor.Val)
+					if err != nil {
+						fmt.Printf("couldn't parse href '%v': %v\n", anchor.Val, err)
+						continue
+					}
 
-func findLink(node *html.Node, urlLinks *[]string) {
-	if node.Type == html.ElementNode && node.Data == "a" {
-		for _, attr := range node.Attr {
-			if attr.Key == "href" {
-				*urlLinks = append(*urlLinks, attr.Val)
+					resolvedURL := baseUrl.ResolveReference(href)
+					urls = append(urls, resolvedURL.String())
+				}
 			}
 		}
+		for child := node.FirstChild; child != nil; child = child.NextSibling {
+			traverseNode(child)
+		}
 	}
-	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		findLink(child, urlLinks)
-	}
+	traverseNode(doc)
+
+	return urls, nil
 }

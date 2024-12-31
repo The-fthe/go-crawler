@@ -1,16 +1,18 @@
 package main
 
 import (
-	"fmt"
+	"reflect"
+	"strings"
 	"testing"
 )
 
 func TestURLsFromHTML(t *testing.T) {
 	tests := []struct {
-		name      string
-		inputURL  string
-		inputBody string
-		expected  []string
+		name          string
+		inputURL      string
+		inputBody     string
+		expected      []string
+		errorContains string
 	}{
 		{
 			name:     "absolute and relative URLs",
@@ -82,28 +84,150 @@ func TestURLsFromHTML(t *testing.T) {
       </body>
   </html>
   `,
-			expected: []string{},
+			expected: nil,
+		},
+		{
+			name:     "absolute URL",
+			inputURL: "https://blog.boot.dev",
+			inputBody: `
+<html>
+	<body>
+		<a href="https://blog.boot.dev">
+			<span>Boot.dev</span>
+		</a>
+	</body>
+</html>
+`,
+			expected: []string{"https://blog.boot.dev"},
+		},
+		{
+			name:     "relative URL",
+			inputURL: "https://blog.boot.dev",
+			inputBody: `
+<html>
+	<body>
+		<a href="/path/one">
+			<span>Boot.dev</span>
+		</a>
+	</body>
+</html>
+`,
+			expected: []string{"https://blog.boot.dev/path/one"},
+		},
+		{
+			name:     "absolute and relative URLs",
+			inputURL: "https://blog.boot.dev",
+			inputBody: `
+<html>
+	<body>
+		<a href="/path/one">
+			<span>Boot.dev</span>
+		</a>
+		<a href="https://other.com/path/one">
+			<span>Boot.dev</span>
+		</a>
+	</body>
+</html>
+`,
+			expected: []string{"https://blog.boot.dev/path/one", "https://other.com/path/one"},
+		},
+		{
+			name:     "no href",
+			inputURL: "https://blog.boot.dev",
+			inputBody: `
+<html>
+	<body>
+		<a>
+			<span>Boot.dev></span>
+		</a>
+	</body>
+</html>
+`,
+			expected: nil,
+		},
+		{
+			name:     "bad HTML",
+			inputURL: "https://blog.boot.dev",
+			inputBody: `
+<html body>
+	<a href="path/one">
+		<span>Boot.dev></span>
+	</a>
+</html body>
+`,
+			expected: []string{"https://blog.boot.dev/path/one"},
+		},
+		{
+			name:     "invalid href URL",
+			inputURL: "https://blog.boot.dev",
+			inputBody: `
+<html>
+	<body>
+		<a href=":\\invalidURL">
+			<span>Boot.dev</span>
+		</a>
+	</body>
+</html>
+`,
+			expected: nil,
+		},
+		{
+			name:     "handle invalid base URL",
+			inputURL: `:\\invalidBaseURL`,
+			inputBody: `
+<html>
+	<body>
+		<a href="/path">
+			<span>Boot.dev</span>
+		</a>
+	</body>
+</html>
+`,
+			expected:      nil,
+			errorContains: "couldn't parse base URL",
 		},
 	}
 
 	for i, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			actuals, err := getURLsFromHTML(tc.inputBody, tc.inputURL)
-			if err != nil {
+			actual, err := getURLsFromHTML(tc.inputBody, tc.inputURL)
+			if err != nil && !strings.Contains(err.Error(), tc.errorContains) {
 				t.Errorf("Test %v - '%s' FAIL: unexpected error: %v", i, tc.name, err)
 				return
+			} else if err != nil && tc.errorContains == "" {
+				t.Errorf("Test %v - '%s' FAIL: unexpected error: %v", i, tc.name, err)
+				return
+			} else if err == nil && tc.errorContains != "" {
+				t.Errorf("Test %v - '%s' FAIL: expected error containing '%v', got none.", i, tc.name, tc.errorContains)
+				return
 			}
-			for _, link := range actuals {
-				fmt.Println("actual link: ", link)
-			}
-			if len(tc.expected) != len(actuals) {
-				t.Errorf("Test %v -FAIL: Different length: expected: %d, get: %d", tc.name, len(tc.expected), len(actuals))
-			}
-			for i := range tc.expected {
-				if actuals[i] != tc.expected[i] {
-					t.Errorf("Test %v - '%s' FAIL: expected URL: %v, actual: %v", i, tc.name, tc.expected[i], actuals[i])
-				}
+
+			if !reflect.DeepEqual(actual, tc.expected) {
+				t.Errorf("Test %v - '%s' FAIL: expected URLs %v, got URLs %v", i, tc.name, tc.expected, actual)
+				return
 			}
 		})
 	}
+
+	// for i, tc := range tests {
+	// 	t.Run(tc.name, func(t *testing.T) {
+	// 		actuals, err := getURLsFromHTML(tc.inputBody, tc.inputURL)
+	// 		if err != nil && !strings.Contains(err.Error(), tc.errorContains) {
+	// 			t.Errorf("Test %v - '%s' FAIL: unexpected error: %v", i, tc.name, err)
+	// 			return
+	// 		} else if err != nil && tc.errorContains == "" {
+	// 			t.Errorf("Test %v - '%s' FAIL: unexpected error: %v", i, tc.name, err)
+	// 			return
+	// 		} else if err == nil && tc.errorContains != "" {
+	// 			t.Errorf("Test %v - '%s' FAIL: expected error containing '%v' got none", i, tc.name, tc.errorContains)
+	// 			return
+	// 		}
+	//
+	// 		if !reflect.DeepEqual(actuals, tc.expected) {
+	// 			t.Errorf("Test %v - '%s' FAIL: expected URLs %v, got URLs %v", i, tc.name, tc.expected, actuals)
+	// 			return
+	// 		}
+	//
+	// 	})
+	// }
 }

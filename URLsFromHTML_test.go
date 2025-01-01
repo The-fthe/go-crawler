@@ -208,26 +208,4 @@ func TestURLsFromHTML(t *testing.T) {
 			}
 		})
 	}
-
-	// for i, tc := range tests {
-	// 	t.Run(tc.name, func(t *testing.T) {
-	// 		actuals, err := getURLsFromHTML(tc.inputBody, tc.inputURL)
-	// 		if err != nil && !strings.Contains(err.Error(), tc.errorContains) {
-	// 			t.Errorf("Test %v - '%s' FAIL: unexpected error: %v", i, tc.name, err)
-	// 			return
-	// 		} else if err != nil && tc.errorContains == "" {
-	// 			t.Errorf("Test %v - '%s' FAIL: unexpected error: %v", i, tc.name, err)
-	// 			return
-	// 		} else if err == nil && tc.errorContains != "" {
-	// 			t.Errorf("Test %v - '%s' FAIL: expected error containing '%v' got none", i, tc.name, tc.errorContains)
-	// 			return
-	// 		}
-	//
-	// 		if !reflect.DeepEqual(actuals, tc.expected) {
-	// 			t.Errorf("Test %v - '%s' FAIL: expected URLs %v, got URLs %v", i, tc.name, tc.expected, actuals)
-	// 			return
-	// 		}
-	//
-	// 	})
-	// }
 }

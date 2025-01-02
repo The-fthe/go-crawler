@@ -43,13 +43,13 @@ func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int) {
 	}
 	fmt.Println("htmlBody: ", htmlBody[:20])
 
-	nextUrls, err := getURLsFromHTML(htmlBody, rawBaseURL)
+	nextURLs, err := getURLsFromHTML(htmlBody, rawBaseURL)
 	if err != nil {
 		fmt.Println("GetURLs error: ", err.Error())
 		return
 	}
 
-	for _, url := range nextUrls {
-		crawlPage(rawBaseURL, url, pages)
+	for _, nextURL := range nextURLs {
+		crawlPage(rawBaseURL, nextURL, pages)
 	}
 }

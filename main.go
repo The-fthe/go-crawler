@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 )
@@ -18,19 +17,12 @@ func main() {
 	} else if strings.Contains(result, START_CRAWL) {
 		fmt.Println(result)
 
-		pages := make(map[string]int)
 		rawUrl := os.Args[1]
-		baseUrl, err := url.Parse(rawUrl)
-		if err != nil {
-			fmt.Println("error: ", err.Error())
-			os.Exit(1)
-		}
-		baseUrl.Path = ""
-		fmt.Println("baseURl: ", baseUrl)
+		pages := make(map[string]int)
+		crawlPage(rawUrl, rawUrl, pages)
 
-		crawlPage(baseUrl.String(), rawUrl, pages)
 		for link, count := range pages {
-			fmt.Println("Link: ", link, ": ", count)
+			fmt.Println(link, ": ", count)
 		}
 	}
 }

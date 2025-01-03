@@ -3,34 +3,31 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 )
 
 func main() {
-	result := cmd(os.Args)
-	if result == NO_WEBSITE_PROVIDED {
-		fmt.Println(result)
+	baseURLRaw, maxConcurreny, maxPage, err := cmd(os.Args)
+	if err != nil {
+		fmt.Println(err.Error())
 		os.Exit(1)
-	} else if result == TOO_MANY_ARGUMENT {
-		fmt.Println(result)
-		os.Exit(1)
-	} else if strings.Contains(result, START_CRAWL) {
-		fmt.Println(result)
-
-		rawUrl := os.Args[1]
-
-		c, err := configure(rawUrl, 10)
-		if err != nil {
-			fmt.Println("Configure crawler error: ", err.Error())
-			os.Exit(1)
-		}
-
-		c.wg.Add(1)
-		c.crawlPage(rawUrl)
-		c.wg.Wait()
-
-		for link, count := range c.pages {
-			fmt.Println(link, ": ", count)
-		}
 	}
+	fmt.Println(START_CRAWL, " ", baseURLRaw)
+
+	rawUrl := os.Args[1]
+
+	c, err := configure(rawUrl, maxConcurreny, maxPage)
+	if err != nil {
+		fmt.Println("", err.Error())
+		os.Exit(1)
+	}
+
+	c.wg.Add(1)
+	c.crawlPage(rawUrl)
+	c.wg.Wait()
+
+	fmt.Println("MaxPage Count: ", c.CurrPageCount())
+	for link, count := range c.pages {
+		fmt.Println(link, ": ", count)
+	}
+	os.Exit(0)
 }

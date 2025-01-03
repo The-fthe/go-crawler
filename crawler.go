@@ -12,9 +12,10 @@ type Config struct {
 	mu                 *sync.Mutex
 	concurrencyControl chan struct{}
 	wg                 *sync.WaitGroup
+	maxPage            int
 }
 
-func configure(rawBaseURL string, maxConcurrency int) (*Config, error) {
+func configure(rawBaseURL string, maxConcurrency, maxPage int) (*Config, error) {
 	baseURL, err := url.Parse(rawBaseURL)
 	if err != nil {
 		return nil, err
@@ -25,8 +26,14 @@ func configure(rawBaseURL string, maxConcurrency int) (*Config, error) {
 		mu:                 new(sync.Mutex),
 		concurrencyControl: make(chan struct{}, maxConcurrency),
 		wg:                 new(sync.WaitGroup),
+		maxPage:            maxPage,
 	}
 	return &c, nil
+}
+func (c *Config) CurrPageCount() int {
+	defer c.mu.Unlock()
+	c.mu.Lock()
+	return len(c.pages)
 }
 
 // require add `Config.wg.Add(1)` when first run, to prevent negative wg
@@ -36,6 +43,9 @@ func (c *Config) crawlPage(rawCurrentURL string) {
 		<-c.concurrencyControl
 		c.wg.Done()
 	}()
+	if c.CurrPageCount() >= c.maxPage {
+		return
+	}
 
 	parseCurrURL, err := url.Parse(rawCurrentURL)
 	if err != nil {

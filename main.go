@@ -25,9 +25,7 @@ func main() {
 	c.crawlPage(rawUrl)
 	c.wg.Wait()
 
-	fmt.Println("MaxPage Count: ", c.CurrPageCount())
-	for link, count := range c.pages {
-		fmt.Println(link, ": ", count)
-	}
+	c.printReport()
+
 	os.Exit(0)
 }

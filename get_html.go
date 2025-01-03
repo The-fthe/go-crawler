@@ -24,7 +24,7 @@ func GetHMTL(rawURL string) (string, error) {
 
 	contentType := res.Header.Get("content-type")
 	if !strings.Contains(contentType, "text/html") {
-		return "", fmt.Errorf("got non-HTML response: %s", contentType)
+		return "", fmt.Errorf("got non-HTML response: %s in %s", contentType, rawURL)
 	}
 
 	htmlBodyBytes, err := io.ReadAll(res.Body)

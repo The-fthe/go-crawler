@@ -19,15 +19,16 @@ func main() {
 
 		rawUrl := os.Args[1]
 
-		c, err := configure(rawUrl, 1)
+		c, err := configure(rawUrl, 10)
 		if err != nil {
 			fmt.Println("Configure crawler error: ", err.Error())
 			os.Exit(1)
 		}
 
+		c.wg.Add(1)
 		c.crawlPage(rawUrl)
-
 		c.wg.Wait()
+
 		for link, count := range c.pages {
 			fmt.Println(link, ": ", count)
 		}

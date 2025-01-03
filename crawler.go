@@ -29,6 +29,7 @@ func configure(rawBaseURL string, maxConcurrency int) (*Config, error) {
 	return &c, nil
 }
 
+// require add `Config.wg.Add(1)` when first run, to prevent negative wg
 func (c *Config) crawlPage(rawCurrentURL string) {
 	c.concurrencyControl <- struct{}{}
 	defer func() {
@@ -49,12 +50,10 @@ func (c *Config) crawlPage(rawCurrentURL string) {
 
 	normalizedURL, err := normalizedURL(rawCurrentURL)
 	if err != nil {
-		fmt.Println("Normalize error: ", err.Error())
 		return
 	}
 
 	if c.addPageVisist(normalizedURL) {
-		fmt.Printf("found visited normalizedURL: %s", normalizedURL)
 		return
 	}
 

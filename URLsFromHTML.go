@@ -7,12 +7,7 @@ import (
 	"strings"
 )
 
-func getURLsFromHTML(htmlBody, rawBaseURL string) ([]string, error) {
-	baseUrl, err := url.Parse(rawBaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't parse base URL: %v", err)
-	}
-
+func getURLsFromHTML(htmlBody string, baseURL *url.URL) ([]string, error) {
 	htmlReader := strings.NewReader(htmlBody)
 	doc, err := html.Parse(htmlReader)
 	if err != nil {
@@ -31,7 +26,7 @@ func getURLsFromHTML(htmlBody, rawBaseURL string) ([]string, error) {
 						continue
 					}
 
-					resolvedURL := baseUrl.ResolveReference(href)
+					resolvedURL := baseURL.ResolveReference(href)
 					urls = append(urls, resolvedURL.String())
 				}
 			}

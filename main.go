@@ -18,10 +18,17 @@ func main() {
 		fmt.Println(result)
 
 		rawUrl := os.Args[1]
-		pages := make(map[string]int)
-		crawlPage(rawUrl, rawUrl, pages)
 
-		for link, count := range pages {
+		c, err := configure(rawUrl, 1)
+		if err != nil {
+			fmt.Println("Configure crawler error: ", err.Error())
+			os.Exit(1)
+		}
+
+		c.crawlPage(rawUrl)
+
+		c.wg.Wait()
+		for link, count := range c.pages {
 			fmt.Println(link, ": ", count)
 		}
 	}
